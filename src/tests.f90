@@ -210,6 +210,7 @@ contains
     use define_kind, only: HI_SIDE, LO_SIDE
     use iso_fortran_env, only: REAL64, INT64
     use mesh_types, only: mesh_t
+    use scoria, only: print_tsum, print_face_num
 #ifdef ENABLE_VTUNE  
     use ittnotify
 #endif
@@ -241,6 +242,11 @@ contains
     else
        my_T_sum = 1.0
     end if
+
+    call print_tsum(my_T_sum, m%sim%numdim)
+
+    call print_face_num(m%faces%face_num, m%sim%numdim)
+
     do iIter = 1, n_iter
        do iDim = 1, m%sim%numdim
           ! for each dimension

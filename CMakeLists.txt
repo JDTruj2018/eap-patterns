@@ -11,12 +11,8 @@ option(EP_GZ "Enable GZ file reading in PIO;" "ON")
 option(EP_VTUNE "Enable VTUNE profiling control;" "OFF") 
 option(EP_IPO "Enable Interprocedural Optimization;" "OFF") 
 
-if ( EP_MPI )
-  find_package(MPI REQUIRED)
-endif ()
-
 # Specify default build
-set(CMAKE_BUILD_TYPE Release CACHE STRING "Buld type")
+set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
 
 # Always add "-g" to builds
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -g")
@@ -41,11 +37,13 @@ set(F90_SOURCES
   src/main.F90
   src/mem_release.f90
   src/mesh_types.f90
+  src/scoria.f90
   src/tests.f90
   src/util.f90
   )
 
 set(C_SOURCES
+  src/scoria_wrapper.c
   src/fileUtils.c
   )
 
@@ -54,7 +52,7 @@ set_source_files_properties(
   PROPERTIES Fortran_PREPROCESS ON
 )
 
-if (EP_SANITIZE )
+if ( EP_SANITIZE )
   if ("${CMAKE_Fortran_COMPILER_ID}" EQUAL "GNU")
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fsanitize=address")
   endif()
@@ -66,6 +64,9 @@ endif ()
 
 add_executable(mygrad ${F90_SOURCES} ${C_SOURCES} )
 set_property(TARGET mygrad PROPERTY LINKER_LANGUAGE Fortran)
+
+include_directories(include/ include/client/ include/controller/ include/posix/ include/shared/ include/uthash/)
+target_link_libraries(mygrad pthread)
 
 # Add VTune
 if ( EP_VTUNE )

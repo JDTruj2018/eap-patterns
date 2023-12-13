@@ -87,6 +87,7 @@ module interface_types
 end module interface_types
 
 module sim_types
+  use iso_c_binding
   public
   type ::  sim_info_t
      integer :: numdim=3
