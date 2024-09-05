@@ -2,8 +2,6 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-#include "kernels.h"
-
 void print_tsum(double val, int32_t ndim) {
   printf("TSum: %.2f, ndim: %" PRId32 "\n", val, ndim);
 }
@@ -14,6 +12,13 @@ void print_face_num(int32_t * fnum, const int len) {
   printf("\n");
 }
 
+void scoria_read_1(double *res, const double *buffer, const size_t N, const size_t *ind1, const size_t N1) {
+  for (size_t i = 0; i < N1; ++i) {
+    res[i] = buffer[ind1[i]];
+  }
+}
+
+/*
 i_type get_intrin(const int intrin) {
   i_type intrinsic;
   if (intrin == 0) intrinsic = NONE;
@@ -132,3 +137,4 @@ void writeadd_multi_thread_2_wrapper(double *buffer, const double *input, const 
 
   writeadd_multi_thread_2(buffer, input, N, ind1, ind2, nthreads, intrinsic);
 }
+*/

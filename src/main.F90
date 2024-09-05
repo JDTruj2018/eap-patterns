@@ -54,6 +54,7 @@ program test
   use clone_lib_module, only: clone_exit, clone_myid, clone_nprocs, &
        clone_reduce, CLONE_SUM, clone_barrier
   use tests, only: test_driver
+  use scoria, only: scoria_read_1
 #ifdef ENABLE_VTUNE  
   use ittnotify
 #endif
@@ -67,6 +68,19 @@ program test
   real(REAL64) :: my_result, expected_result
   integer(INT64) :: total_numtop, local_numtop
   real(REAL64) :: t0, dt
+  real(REAL64), dimension(0:3) :: res_test, buffer_test
+  integer(INT64), dimension(0:3) :: ind1
+  integer(INT64) :: i
+
+  res_test = (/ 0.0, 0.0, 0.0, 0.0 /)
+  buffer_test = (/ 3.0, 2.0, 1.0, 0.0 /)
+  ind1 = (/ 2, 1, 3, 0 /)
+
+  call scoria_read_1(res_test, buffer_test, 4_8, ind1, 4_8)
+  do i = 0, 3
+        write(*, "(f8.2)", advance = "no") res_test(i)
+  end do
+  write(*, " ")
 
 #ifdef ENABLE_VTUNE  
   call itt_pause()
@@ -102,4 +116,6 @@ program test
      call fm%release()
      call clone_exit()
   endif
+
+
 end program test

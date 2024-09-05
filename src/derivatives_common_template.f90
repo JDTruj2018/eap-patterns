@@ -199,6 +199,8 @@
     end subroutine collect_vof_mat_mixed
     subroutine inside_com3b(sim, mesh, dir, nm, cell_val_mnmx_hilo, kode, &
          & cell_value_hilo, do_special, do_pressure, core, faceval )
+      use iso_fortran_env, only: REAL64, INT64
+      use scoria, only: scoria_read_1
 
       ! non-optional scalars and derived types
       class(sim_info_t), intent(in) :: sim
@@ -220,9 +222,21 @@
       real(REAL64), intent(in), optional     :: faceval(:,:)
 
       ! ----- local variables
-
       integer :: loop, n, lhi, llo, lmi, lmo
       real(REAL64) :: face_value
+
+      ! ----- scoria variables
+      integer(INT64) :: i, count, scoria_n
+      real(REAL64) :: scoria_face_value
+
+      integer(INT64), allocatable, save :: face_local_hi_scoria(:), face_local_lo_scoria(:)
+
+      real(REAL64), allocatable, save :: cell_half_lo_scoria(:), rho_scoria(:), &
+      & cell_value_hilo_1_scoria(:), cell_value_hilo_2_scoria(:), cell_half_hi_scoria(:)
+
+      real(REAL64), allocatable, save :: cell_half_lo_hi_packed(:), rho_hi_packed(:), &
+      & cell_value_hilo_lo_packed(:), cell_half_hi_lo_packed(:), rho_lo_packed(:), &
+      & cell_value_hilo_hi_packed(:)
 
       associate (cells => mesh%cells, &
            faces => mesh%faces)
@@ -232,10 +246,120 @@
         ! .....    calculate the area weighted average face values
         do loop = 1,faces%face_num(dir)
 
+            ! Setup
+            scoria_n = faces%face_hi(loop, dir) - faces%face_lo(loop, dir)
+
+            allocate(face_local_hi_scoria(scoria_n))
+            allocate(face_local_lo_scoria(scoria_n))
+
+            count = 1
+            do i = faces%face_lo(loop,dir), faces%face_hi(loop,dir)
+               face_local_hi_scoria(count) = faces%face_local(i, HI_SIDE, dir)
+               face_local_lo_scoria(count) = faces%face_local(i, LO_SIDE, dir)
+               count = count + 1
+            enddo
+
+            allocate(cell_half_lo_scoria(size(cells%cell_half_lo(:, dir))))
+            if (size(core%rho) .lt. 1) then
+               allocate(rho_scoria(max(maxval(face_local_lo_scoria), maxval(face_local_hi_scoria))))
+            else
+               allocate(rho_scoria(size(core%rho)))
+            endif
+            allocate(cell_value_hilo_1_scoria(size(cell_value_hilo(:, 1, nm))))
+            allocate(cell_value_hilo_2_scoria(size(cell_value_hilo(:, 2, nm))))
+            allocate(cell_half_hi_scoria(size(cells%cell_half_hi(:, dir))))
+
+            allocate(cell_half_lo_hi_packed(scoria_n))
+            allocate(rho_hi_packed(scoria_n))
+            allocate(cell_value_hilo_lo_packed(scoria_n))
+            allocate(cell_half_hi_lo_packed(scoria_n))
+            allocate(rho_lo_packed(scoria_n))
+            allocate(cell_value_hilo_hi_packed(scoria_n))
+
+            write(0, *) scoria_n, size(cells%cell_half_lo(:, dir)), size(core%rho), &
+            & size(cell_value_hilo(:, 1, nm)), size(cell_value_hilo(:, 2, nm)), size(cells%cell_half_hi(:, dir))
+
+            count = 1
+            do i = lbound(cells%cell_half_lo, 1), ubound(cells%cell_half_lo, 1)
+               cell_half_lo_scoria(count) = cells%cell_half_lo(i, dir)
+               count = count + 1
+            enddo
+
+            count = 1
+            do i = lbound(core%rho, 1), ubound(core%rho, 1)
+               rho_scoria(count) = core%rho(i)
+               count = count + 1
+            enddo
+
+            count = 1
+            do i = lbound(cell_value_hilo, 1), ubound(cell_value_hilo, 1)
+               cell_value_hilo_1_scoria(count) = cell_value_hilo(i, 1, nm)
+               count = count + 1
+            enddo
+
+            count = 1
+            do i = lbound(cell_value_hilo, 1), ubound(cell_value_hilo, 1)
+               cell_value_hilo_2_scoria(count) = cell_value_hilo(i, 2, nm)
+               count = count + 1
+            enddo
+
+            count = 1
+            do i = lbound(cells%cell_half_hi, 1), ubound(cells%cell_half_hi, 1)
+               cell_half_hi_scoria(count) = cells%cell_half_hi(i, dir)
+              count = count + 1
+           enddo 
+
+           write(0, *) "here"
+
+           ! Scoria Read (1-level Gather)
+           call scoria_read_1(cell_half_lo_hi_packed, cell_half_lo_scoria, &
+           & int(size(cell_half_lo_scoria), 8), face_local_hi_scoria, scoria_n)
+           call scoria_read_1(rho_hi_packed, rho_scoria, int(size(rho_scoria), 8), &
+           & face_local_hi_scoria, scoria_n)
+           call scoria_read_1(cell_value_hilo_lo_packed, cell_value_hilo_2_scoria, & 
+           & int(size(cell_value_hilo_2_scoria), 8), face_local_lo_scoria, scoria_n)
+           call scoria_read_1(cell_half_hi_lo_packed, cell_half_hi_scoria, & 
+           & int(size(cell_half_hi_scoria), 8), face_local_lo_scoria, scoria_n)
+           call scoria_read_1(rho_lo_packed, rho_scoria, int(size(rho_scoria), 8), & 
+           & face_local_lo_scoria, scoria_n)
+           call scoria_read_1(cell_value_hilo_hi_packed, cell_value_hilo_1_scoria, &
+           & int(size(cell_value_hilo_1_scoria), 8), face_local_hi_scoria, scoria_n)
+
            if (faces%face_id(loop,dir) .gt. 2) then
 
               if (present(do_special)) then
+               ! 
                  ! Do the HI_SIDE part
+                 if (core%rho(llo).gt.ZERO .or. core%rho(lhi).gt.ZERO) then
+                     if (do_pressure .and. cell_value_hilo(llo,1,nm)       &
+                            & * cell_value_hilo(lhi,2,nm).le.ZERO) then
+                        do i = 1, scoria_n
+                           write(0, *) "here1"
+                           scoria_face_value = (cell_half_lo_hi_packed(i) * &
+                                       & rho_hi_packed(i) * &
+                                       & cell_value_hilo_lo_packed(i) + &
+                                       & cell_half_hi_lo_packed(i) * &
+                                       & rho_lo_packed(i) * &
+                                       & cell_value_hilo_hi_packed(i)) / &
+                                       & (cell_half_lo_hi_packed(i) * &
+                                       & rho_hi_packed(i) + &
+                                       & cell_half_hi_lo_packed(i) * &
+                                       & rho_lo_packed(i))
+                        enddo
+                     else
+                        write(0, *) "here2"
+                        do i = 1, scoria_n
+                           scoria_face_value = (cell_half_lo_hi_packed(i) * &
+                                 & cell_value_hilo_lo_packed(i) + &
+                                 & cell_half_hi_lo_packed(i) * &
+                                 & cell_value_hilo_hi_packed(i)) / &
+                                 & (cell_half_lo_hi_packed(i) + &
+                                 & cell_half_hi_lo_packed(i))
+                        enddo
+                     endif
+                  endif
+                  write(0, *) "Scoria Face Value:", scoria_face_value
+
                  do n  = faces%face_lo(loop,dir), faces%face_hi(loop,dir)
                     lhi = faces%face_local(n,HI_SIDE,dir)
                     llo = faces%face_local(n,LO_SIDE,dir)
@@ -245,13 +369,16 @@
                        if (do_pressure .and. cell_value_hilo(llo,1,nm)       &
                             & * cell_value_hilo(lhi,2,nm).le.ZERO) then
                           ! .....  this coding addresses the hot spot problem
+                          write(0, *) "here1"
                           face_value = (cells%cell_half_lo(lhi,dir)*core%rho(lhi) *  &
                                & cell_value_hilo(llo,2,nm)         &
                                & +  cells%cell_half_hi(llo,dir)*core%rho(llo) *  &
                                & cell_value_hilo(lhi,1,nm))        &
                                & / (cells%cell_half_lo(lhi,dir)*core%rho(lhi)    &
                                & +  cells%cell_half_hi(llo,dir)*core%rho(llo))
+                           write(*, "(f8.2)") face_value
                        else
+                          write(0, *) "here2"
                           face_value = (cells%cell_half_lo(lhi,dir) *           &
                                & cell_value_hilo(llo,2,nm)         &
                                & +  cells%cell_half_hi(llo,dir) *           &
@@ -264,7 +391,39 @@
                          & min(cell_val_mnmx_hilo(lhi,1), face_value)
                     cell_val_mnmx_hilo(lhi,2) =                          &
                          & max(cell_val_mnmx_hilo(lhi,2), face_value)
+                     write(0, *) "Face Value:", face_value
                  enddo ! n
+
+
+                 if (core%rho(llo).gt.ZERO .or. core%rho(lhi).gt.ZERO) then
+                     if (do_pressure .and. cell_value_hilo(llo,1,nm)       &
+                        & *cell_value_hilo(lhi,2,nm).le.ZERO) then
+                        write(0, *) "here3"
+                        do i = 1, scoria_n
+                           scoria_face_value = (cell_half_lo_hi_packed(i) * &
+                              & rho_hi_packed(i) * &
+                              & cell_value_hilo_lo_packed(i) + &
+                              & cell_half_hi_lo_packed(i) * &
+                              & rho_lo_packed(i) * &
+                              & cell_value_hilo_hi_packed(i)) / &
+                              & (cell_half_lo_hi_packed(i) * &
+                              & rho_hi_packed(i) + &
+                              & cell_half_hi_lo_packed(i) * &
+                              & rho_lo_packed(i))
+                        enddo
+                     else
+                        write(0, *) "here4"
+                        do i = 1, scoria_n
+                        scoria_face_value = (cell_half_lo_hi_packed(i) * &
+                               & cell_value_hilo_lo_packed(i) + &
+                               & cell_half_hi_lo_packed(i) * &
+                               & cell_value_hilo_hi_packed(i)) /&
+                               & (cell_half_lo_hi_packed(i) + &
+                               & cell_half_hi_lo_packed(i))
+                        enddo
+                     endif
+                  endif
+                  write(0, *) "Scoria Face Value:", scoria_face_value
 
                  ! do the LO_SIDE part
                  do n  = faces%face_lo(loop,dir), faces%face_hi(loop,dir)
@@ -275,6 +434,7 @@
                     if (core%rho(llo).gt.ZERO .or. core%rho(lhi).gt.ZERO) then
                        if (do_pressure .and. cell_value_hilo(llo,1,nm)       &
                             & *cell_value_hilo(lhi,2,nm).le.ZERO) then
+                            write(0, *) "here3"
                           ! .....  this coding addresses the hot spot problem
                           face_value = (cells%cell_half_lo(lhi,dir)*core%rho(lhi) *  &
                                & cell_value_hilo(llo,2,nm)         &
@@ -283,6 +443,7 @@
                                & / (cells%cell_half_lo(lhi,dir)*core%rho(lhi)    &
                                & +  cells%cell_half_hi(llo,dir)*core%rho(llo))
                        else
+                           write(0, *) "here4"
                           face_value = (cells%cell_half_lo(lhi,dir) *           &
                                & cell_value_hilo(llo,2,nm)         &
                                & +  cells%cell_half_hi(llo,dir) *           &
@@ -295,10 +456,35 @@
                          & min(cell_val_mnmx_hilo(llo,3), face_value)
                     cell_val_mnmx_hilo(llo,4) =                          &
                          & max(cell_val_mnmx_hilo(llo,4), face_value)
+                    write(0, *) "Face Value:", face_value
                  enddo ! n
 
               else !not present(do_special)
                  !       Do the HI_SIDE first
+                 write(0, *) "here5"
+                 do i = 1, scoria_n
+                     scoria_face_value = (cell_half_lo_hi_packed(i) * &
+                        & cell_value_hilo_lo_packed(i) + &
+                         & cell_half_hi_lo_packed(i) * &
+                         & cell_value_hilo_hi_packed(i)) / &
+                         & (cell_half_lo_hi_packed(i) + &
+                         & cell_half_hi_lo_packed(i))
+                 enddo
+                 write(0, *) "Scoria Face Value: "
+                 write(*, "(f8.2)") scoria_face_value
+
+                 do i = 1, scoria_n
+                     scoria_face_value = (cell_half_lo_hi_packed(i) * &
+                        & cell_value_hilo_lo_packed(i) + &
+                        & cell_half_hi_lo_packed(i) * &
+                        & cell_value_hilo_hi_packed(i)) / &
+                        & (cell_half_lo_hi_packed(i) + &
+                        & cell_half_hi_lo_packed(i))
+                 enddo
+                 write(0, *) "Scoria Face Value: "
+                 write(*, "(f8.2)") scoria_face_value
+
+                 write(0, *) "here5"
                  do n  = faces%face_lo(loop,dir), faces%face_hi(loop,dir)
                     lhi = faces%face_local(n,HI_SIDE,dir)
                     llo = faces%face_local(n,LO_SIDE,dir)
@@ -308,6 +494,8 @@
                     cell_val_mnmx_hilo(lhi,1) = min(cell_val_mnmx_hilo(lhi,1), face_value)
                     cell_val_mnmx_hilo(lhi,2) = max(cell_val_mnmx_hilo(lhi,2), face_value)
                  enddo ! n
+                 write(0, *) "Face Value: "
+                 write(*, "(f8.2)") face_value
 
                  !       Do the LO_SIDE
                  do n  = faces%face_lo(loop,dir), faces%face_hi(loop,dir)
@@ -319,46 +507,105 @@
                     cell_val_mnmx_hilo(llo,3) = min(cell_val_mnmx_hilo(llo,3), face_value)
                     cell_val_mnmx_hilo(llo,4) = max(cell_val_mnmx_hilo(llo,4), face_value)
                  enddo ! n
+                 write(0, *) "Face Value: "
+                 write(*, "(f8.2)") face_value
+
               endif ! present(do_special)
 
            else if (faces%face_id(loop,dir) .eq. 2) then
 
               if(kode(dir,nm).eq.-2)then
+                 write(0, *) "here6"
+                 do i = 1, scoria_n
+                     scoria_face_value = faceval(n, dir)
+                 enddo
+                 write(0, *) "Scoria Face Value: "
+                 write(*, "(f8.2)") scoria_face_value
+
+                 write(0, *) "here6"
                  do n  = faces%face_lo(loop,dir), faces%face_hi(loop,dir)
                     lmo = faces%face_local(n,LO_SIDE,dir)
                     face_value = faceval(n,dir)
                     cell_val_mnmx_hilo(lmo,3) = min(cell_val_mnmx_hilo(lmo,3), face_value)
                     cell_val_mnmx_hilo(lmo,4) = max(cell_val_mnmx_hilo(lmo,4), face_value)
                  enddo ! n
+                 write(0, *) "Face Value: "
+                 write(*, "(f8.2)") face_value
               else
-                 do n  = faces%face_lo(loop,dir), faces%face_hi(loop,dir)
+                write(0, *) "here7"
+                do i = 1, scoria_n
+                  scoria_face_value = cell_value_hilo_lo_packed(i)
+                enddo
+                write(0, *) "Scoria Face Value: "
+                write(*, "(f8.2)") scoria_face_value
+
+                write(0, *) "here7"
+                  do n  = faces%face_lo(loop,dir), faces%face_hi(loop,dir)
                     llo = faces%face_local(n,LO_SIDE,dir)
                     face_value = cell_value_hilo(llo,2,nm)
                     cell_val_mnmx_hilo(llo,3) = min(cell_val_mnmx_hilo(llo,3), face_value)
                     cell_val_mnmx_hilo(llo,4) = max(cell_val_mnmx_hilo(llo,4), face_value)
                  enddo ! n
+                 write(0, *) "Face Value: "
+                 write(*, "(f8.2)") face_value
               endif
 
            else if (faces%face_id(loop,dir) .eq. 1) then
+           
 
               if(kode(dir,nm).eq.-2)then
+                 write(0, *) "here8"
+                 do i = 1, scoria_n
+                     scoria_face_value = faceval(n, dir)
+                 enddo
+                 write(0, *) "Scoria Face Value: "
+                 write(*, "(f8.2)") scoria_face_value
+
+                 write(0, *) "here8"
                  do n  = faces%face_lo(loop,dir), faces%face_hi(loop,dir)
                     lmi = faces%face_local(n,HI_SIDE,dir)
                     face_value = faceval(n,dir)
                     cell_val_mnmx_hilo(lmi,1) = min(cell_val_mnmx_hilo(lmi,1), face_value)
                     cell_val_mnmx_hilo(lmi,2) = max(cell_val_mnmx_hilo(lmi,2), face_value)
                  enddo ! n
+                 write(0, *) "Face Value: "
+                 write(*, "(f8.2)") face_value
               else
+                 write(0, *) "here9"
+                 do i = 1, scoria_n
+                     scoria_face_value = cell_value_hilo_hi_packed(i)
+                 enddo
+                 write(0, *) "Scoria Face Value: "
+                 write(*, "(f8.2)") scoria_face_value
+
+                 write(0, *) "here9"
                  do n  = faces%face_lo(loop,dir), faces%face_hi(loop,dir)
                     lhi = faces%face_local(n,HI_SIDE,dir)
                     face_value = cell_value_hilo(lhi,1,nm)
                     cell_val_mnmx_hilo(lhi,1) = min(cell_val_mnmx_hilo(lhi,1), face_value)
                     cell_val_mnmx_hilo(lhi,2) = max(cell_val_mnmx_hilo(lhi,2), face_value)
                  enddo ! n
+                 write(0, *) "Face Value: "
+                 write(*, "(f8.2)") face_value
               endif
 
            endif ! face_id
 
+            deallocate(face_local_hi_scoria)
+            deallocate(face_local_lo_scoria)
+
+            deallocate(cell_half_lo_scoria)
+            deallocate(rho_scoria)
+            deallocate(cell_value_hilo_1_scoria)
+            deallocate(cell_value_hilo_2_scoria)
+            deallocate(cell_half_hi_scoria)
+
+            deallocate(cell_half_lo_hi_packed)
+            deallocate(rho_hi_packed)
+            deallocate(cell_value_hilo_lo_packed)
+            deallocate(cell_half_hi_lo_packed)
+            deallocate(rho_lo_packed)
+            deallocate(cell_value_hilo_hi_packed)
         enddo ! loop
 
         TIMERSET(.false., inside_com3b)
@@ -653,7 +900,9 @@
         ! do nm = 1,numvec
         !    do dir = 1,sim%numdim
         !       if (method.ne.NO_DERIV .and. kode(dir,nm).eq.2) then
-        !          deriv(1:mesh%cells%numcell_clone,dir,nm) = core%rho(1:mesh%cells%numcell_clone) * grav_scr%grav_accel(1:mesh%cells%numcell_clone,dir)
+        !          deriv(1:mesh%cells%numcell_clone,dir,nm) = &
+        !            & core%rho(1:mesh%cells%numcell_clone) * & 
+        !            & grav_scr%grav_accel(1:mesh%cells%numcell_clone,dir)
         !       endif
         !    enddo ! dir
         ! enddo ! nm
