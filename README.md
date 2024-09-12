@@ -22,14 +22,14 @@ the on-node demands on memory bandwidth.
 - `cd build`
 - `cmake .. -DEP_MPI=OFF`
 - `make -j`
-- `./mygrad <converted_PIO_file>`
+- `./mygrad <converted_PIO_file> <scoria_flag>`
 
 ### Parallel
 - `mkdir build_parallel`
 - `cd build_parallel`
 - `cmake .. -DEP_MPI=ON`
 - `make -j`
-- `mpirun -n 2048 ./mygrad <converted_PIO_file>`
+- `mpirun -n 2048 ./mygrad <converted_PIO_file> <scoria_flag>`
 
  
 ***

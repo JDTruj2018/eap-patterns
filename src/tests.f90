@@ -30,12 +30,13 @@ contains
     now = real(c_now, REAL64) / c_rate
   end function now
     
-  subroutine test_driver(fm, n_iter)
+  subroutine test_driver(fm, n_iter, use_scoria)
     use fakemesh, only: fakemesh_t
     use clone_lib_module, only: clone_myid
     implicit none
     type(fakemesh_t) :: fm
     integer, intent(in) :: n_iter
+    integer, intent(in) :: use_scoria
 
     myid = clone_myid()
     
@@ -47,7 +48,7 @@ contains
     call faces_check(fm%m, n_iter)
 
     ! The true test: derivatives
-    call deriv_test(fm, n_iter)
+    call deriv_test(fm, n_iter, use_scoria)
     
     if (myid == 0 ) write(*,'(/,"--------END TESTS-----------",/)')
   end subroutine test_driver
@@ -335,7 +336,7 @@ contains
     deallocate(values)
   end subroutine faces_check
 
-  subroutine deriv_test(fm, n_iter)
+  subroutine deriv_test(fm, n_iter, use_scoria)
     use clone_lib_module, only: clone_get
     use fakemesh, only: fakemesh_t
     use gradient_types, only: kode_vel
@@ -343,12 +344,14 @@ contains
     use gradient_types, only: gradient_prop_t
     use interface_types, only: interface_option_t
     use my_derivatives, only: derivatives_common_split
+    use my_scoria_derivatives, only: derivatives_common_split_scoria
 #ifdef ENABLE_VTUNE  
     use ittnotify
 #endif
     implicit none
     type(fakemesh_t) :: fm
     integer, intent(in) :: n_iter
+    integer, intent(in) :: use_scoria
     integer :: numitr
     type(gradient_prop_t) :: gradp
     type(interface_option_t) :: intopt
@@ -356,7 +359,7 @@ contains
     integer :: iMat, iIter
     real(REAL64) :: my_dt
     real(REAL64), allocatable, dimension(:,:)   :: value_cloned
-    integer :: iVar
+    integer :: iVar, jVar
     
     my_dt = now()
 #ifdef ENABLE_VTUNE  
@@ -374,23 +377,44 @@ contains
       gradp%numrho = 1
       gradp%numrho_fvol = 1
       allocate(value_cloned(m%cells%numcell_clone, m%sim%numvel))
+      !do iVar = 1, m%sim%numvel
+      !   do jVar = 1, m%cells%numcell_clone
+      !      value_cloned(jVar, iVar) = real(jVar + iVar * m%sim%numvel, kind=REAL64)
+      !   enddo
+      !enddo
       do iVar = 1, m%sim%numvel
          call clone_get(value_cloned(:, iVar))
       end do
       
-      do iIter = 1, n_iter
-         call derivatives_common_split( &
-              m%sim, m, &
-              fm%frac_core, fm%core, &
-              gradp, intopt, &
-              cells%numcell_clone, gradp%numrho, m%sim%numvel,   &
-              kode_vel, noslope_cell,  &
-              core%deriv_velocity(1:cells%numcell_clone,1:m%sim%numdim,1:m%sim%numvel), &
-              .true., &
-              invalue = core%cell_velocity(1:cells%numcell_clone,1:m%sim%numvel),&
-              value_cloned = value_cloned &
-              )
-      end do
+      if (use_scoria .lt. 1) then
+         do iIter = 1, n_iter
+            call derivatives_common_split( &
+               m%sim, m, &
+               fm%frac_core, fm%core, &
+               gradp, intopt, &
+               cells%numcell_clone, gradp%numrho, m%sim%numvel,   &
+               kode_vel, noslope_cell,  &
+               core%deriv_velocity(1:cells%numcell_clone,1:m%sim%numdim,1:m%sim%numvel), &
+               .true., &
+               invalue = core%cell_velocity(1:cells%numcell_clone,1:m%sim%numvel),&
+               value_cloned = value_cloned &
+               )
+         end do
+      else
+         do iIter = 1, n_iter
+            call derivatives_common_split_scoria( &
+               m%sim, m, &
+               fm%frac_core, fm%core, &
+               gradp, intopt, &
+               cells%numcell_clone, gradp%numrho, m%sim%numvel,   &
+               kode_vel, noslope_cell,  &
+               core%deriv_velocity(1:cells%numcell_clone,1:m%sim%numdim,1:m%sim%numvel), &
+               .true., &
+               invalue = core%cell_velocity(1:cells%numcell_clone,1:m%sim%numvel),&
+               value_cloned = value_cloned &
+               )
+         end do
+      endif ! use_scoria
       deallocate(value_cloned)
     END ASSOCIATE
 #ifdef ENABLE_VTUNE  

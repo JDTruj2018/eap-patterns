@@ -63,8 +63,9 @@ program test
   type(mesh_state_frac_core_t) :: frac_core
   character(len=4096) :: fname
   character(len=4096) :: arg
+  character(len=4096) :: use_scoria_arg
   integer :: nprocs, myid
-  integer :: n_iter
+  integer :: n_iter, use_scoria
   real(REAL64) :: my_result, expected_result
   integer(INT64) :: total_numtop, local_numtop
   real(REAL64) :: t0, dt
@@ -72,15 +73,15 @@ program test
   integer(INT64), dimension(0:3) :: ind1
   integer(INT64) :: i
 
-  res_test = (/ 0.0, 0.0, 0.0, 0.0 /)
-  buffer_test = (/ 3.0, 2.0, 1.0, 0.0 /)
-  ind1 = (/ 2, 1, 3, 0 /)
+  !res_test = (/ 0.0, 0.0, 0.0, 0.0 /)
+  !buffer_test = (/ 3.0, 2.0, 1.0, 0.0 /)
+  !ind1 = (/ 2, 1, 3, 0 /)
 
-  call scoria_read_1(res_test, buffer_test, 4_8, ind1, 4_8)
-  do i = 0, 3
-        write(*, "(f8.2)", advance = "no") res_test(i)
-  end do
-  write(*, " ")
+  !call scoria_read_1(res_test, buffer_test, 4_8, ind1, 4_8)
+  !do i = 0, 3
+  !      write(*, "(f8.2)", advance = "no") res_test(i)
+  !end do
+  !write(*, "(A)")
 
 #ifdef ENABLE_VTUNE  
   call itt_pause()
@@ -93,12 +94,20 @@ program test
   if (.not. binfile_verify_signature(fname)) then
      write(*,*) '_______ERROR: ', trim(fname), ' is not an EAP-bin file'
   else
+
+  ! Get whether to use scoria API or not
+  use_scoria = 0
+  call GET_COMMAND_ARGUMENT(2, use_scoria_arg)
+  if ( len_trim(use_scoria_arg) > 0) then 
+    read(use_scoria_arg,*) use_scoria
+  endif 
+
 #ifdef ENABLE_MPI
      call fm%init(trim(fname))
      myid = clone_myid()
      nprocs = clone_nprocs()
 #else
-     call GET_COMMAND_ARGUMENT(2, arg)
+     call GET_COMMAND_ARGUMENT(3, arg)
      if ( len_trim(arg) > 0) then
         read(arg,*) nprocs
      else
@@ -109,7 +118,7 @@ program test
 #endif
 
      n_iter = 1
-     call test_driver(fm, n_iter)
+     call test_driver(fm, n_iter, use_scoria)
 
      call clone_barrier()
      if (myid == 0) write(*,*) 'releasing'
