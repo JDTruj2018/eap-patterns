@@ -33,6 +33,7 @@ set(F90_SOURCES
   src/clone_reduce.f90
   src/define_kind.f90 
   src/derivatives_common_template.f90
+  src/derivatives_common_template_scoria.f90
   src/fakemesh.f90 
   src/main.F90
   src/mem_release.f90
@@ -43,7 +44,7 @@ set(F90_SOURCES
   )
 
 set(C_SOURCES
-  src/scoria_wrapper.c
+  src/scoria.c
   src/fileUtils.c
   )
 
@@ -64,9 +65,6 @@ endif ()
 
 add_executable(mygrad ${F90_SOURCES} ${C_SOURCES} )
 set_property(TARGET mygrad PROPERTY LINKER_LANGUAGE Fortran)
-
-include_directories(include/ include/client/ include/controller/ include/posix/ include/shared/ include/uthash/)
-target_link_libraries(mygrad pthread)
 
 # Add VTune
 if ( EP_VTUNE )
