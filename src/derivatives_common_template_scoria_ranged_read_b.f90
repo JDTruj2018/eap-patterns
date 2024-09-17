@@ -683,6 +683,7 @@ module my_scoria_ranged_read_b_derivatives
         do i = lbound(face_local_hi_scoria, 1), ubound(face_local_hi_scoria, 1)
           if (range .eq. 0) then
             transformed_hi_n = transformed_hi_n + 1
+            range = range + 1
           else 
             if ((face_local_hi_scoria(i) - prev) .eq. 1) then
               range = range + 1
@@ -700,6 +701,7 @@ module my_scoria_ranged_read_b_derivatives
         do i = lbound(face_local_lo_scoria, 1), ubound(face_local_lo_scoria, 1)
           if (range .eq. 0) then
             transformed_lo_n = transformed_lo_n + 1
+            range = range + 1
           else 
             if ((face_local_lo_scoria(i) - prev) .eq. 1) then
               range = range + 1
@@ -724,6 +726,7 @@ module my_scoria_ranged_read_b_derivatives
           if (range .eq. 0) then
             face_local_hi_scoria_transformed(count) = face_local_hi_scoria(i)
             count = count + 1
+            range = range + 1
           else 
             if ((face_local_hi_scoria(i) - prev) .eq. 1) then
               range = range + 1
@@ -743,6 +746,7 @@ module my_scoria_ranged_read_b_derivatives
           if (range .eq. 0) then
             face_local_lo_scoria_transformed(count) = face_local_lo_scoria(i)
             count = count + 1
+            range = range + 1
           else 
             if ((face_local_lo_scoria(i) - prev) .eq. 1) then
               range = range + 1
@@ -754,7 +758,6 @@ module my_scoria_ranged_read_b_derivatives
           endif
           prev = face_local_lo_scoria(i)
         enddo
-
         ! End Scoria Setup
 
         ! BEGIN SCORIA TIMING
