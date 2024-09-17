@@ -153,5 +153,31 @@ module scoria
             integer(c_size_t), intent(in) :: ind1(0:n1)
         end subroutine scoria_read_1_many_7
 
+        subroutine scoria_read_ranged_1_b(res, buffer, n, ind1, n1, R) &
+                   BIND(C, name="scoria_read_ranged_1_b")
+            use iso_c_binding
+            implicit none
+
+            integer(c_size_t), value, intent(in) :: n
+            integer(c_size_t), value, intent(in) :: n1
+            integer(c_size_t), intent(in) :: R(0:n1)
+            real(c_double), intent(inout) :: res(0:n1)
+            real(c_double), intent(in) :: buffer(0:n)
+            integer(c_size_t), intent(in) :: ind1(0:n1)
+        end subroutine scoria_read_ranged_1_b
+
+        subroutine scoria_read_ranged_1_c(res, buffer, n, ind1, n1, R) &
+                   BIND(C, name="scoria_read_ranged_1_c")
+            use iso_c_binding
+            implicit none
+
+            integer(c_size_t), value, intent(in) :: n
+            integer(c_size_t), value, intent(in) :: n1
+            integer(c_size_t), value, intent(in) :: R
+            real(c_double), intent(inout) :: res(0:n1)
+            real(c_double), intent(in) :: buffer(0:n)
+            integer(c_size_t), intent(in) :: ind1(0:n1)
+        end subroutine scoria_read_ranged_1_c
+
     end interface
 end module scoria

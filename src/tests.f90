@@ -347,6 +347,8 @@ contains
     use my_scoria_derivatives, only: derivatives_common_split_scoria
     use my_scoria_many_read_derivatives, only: derivatives_common_split_scoria_many_read
     use my_scoria_many_read2_derivatives, only: derivatives_common_split_scoria_many_read2
+    use my_scoria_ranged_read_b_derivatives, only: derivatives_common_split_scoria_ranged_read_b
+    use my_scoria_ranged_read_c_derivatives, only: derivatives_common_split_scoria_ranged_read_c
 #ifdef ENABLE_VTUNE  
     use ittnotify
 #endif
@@ -433,6 +435,34 @@ contains
       else if (use_scoria .eq. 3) then 
          do iIter = 1, n_iter
             call derivatives_common_split_scoria_many_read2( &
+               m%sim, m, &
+               fm%frac_core, fm%core, &
+               gradp, intopt, &
+               cells%numcell_clone, gradp%numrho, m%sim%numvel,   &
+               kode_vel, noslope_cell,  &
+               core%deriv_velocity(1:cells%numcell_clone,1:m%sim%numdim,1:m%sim%numvel), &
+               .true., &
+               invalue = core%cell_velocity(1:cells%numcell_clone,1:m%sim%numvel),&
+               value_cloned = value_cloned &
+               )
+         end do
+      else if (use_scoria .eq. 4) then 
+         do iIter = 1, n_iter
+            call derivatives_common_split_scoria_ranged_read_b( &
+               m%sim, m, &
+               fm%frac_core, fm%core, &
+               gradp, intopt, &
+               cells%numcell_clone, gradp%numrho, m%sim%numvel,   &
+               kode_vel, noslope_cell,  &
+               core%deriv_velocity(1:cells%numcell_clone,1:m%sim%numdim,1:m%sim%numvel), &
+               .true., &
+               invalue = core%cell_velocity(1:cells%numcell_clone,1:m%sim%numvel),&
+               value_cloned = value_cloned &
+               )
+         end do
+      else if (use_scoria .eq. 5) then 
+         do iIter = 1, n_iter
+            call derivatives_common_split_scoria_ranged_read_c( &
                m%sim, m, &
                fm%frac_core, fm%core, &
                gradp, intopt, &
