@@ -34,6 +34,8 @@ set(F90_SOURCES
   src/define_kind.f90 
   src/derivatives_common_template.f90
   src/derivatives_common_template_scoria.f90
+  src/derivatives_common_template_scoria_many_read.f90
+  src/derivatives_common_template_scoria_many_read2.f90
   src/fakemesh.f90 
   src/main.F90
   src/mem_release.f90
