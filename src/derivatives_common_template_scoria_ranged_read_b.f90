@@ -564,8 +564,8 @@ module my_scoria_ranged_read_b_derivatives
       real(REAL64) :: c_rate
 
       ! ----- scoria variables
-      integer(INT64) :: i, count, prev, range
-      integer(c_size_t) :: scoria_n, transformed_hi_n, transformed_lo_n
+      integer(INT64) :: i, count
+      integer(c_size_t) :: scoria_n, transformed_hi_n, transformed_lo_n, prev, range
 
       integer(c_size_t), allocatable, save :: face_local_hi_scoria(:), face_local_lo_scoria(:), &
         & face_local_hi_scoria_transformed(:), face_local_lo_scoria_transformed(:), &

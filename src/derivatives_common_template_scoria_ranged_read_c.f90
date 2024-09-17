@@ -564,8 +564,8 @@ module my_scoria_ranged_read_c_derivatives
       real(REAL64) :: c_rate
 
       ! ----- scoria variables
-      integer(INT64) :: i, count
-      integer(c_size_t) :: scoria_n
+      integer(INT64) :: i, count, offset
+      integer(c_size_t) :: scoria_n, R
 
       integer(c_size_t), allocatable, save :: face_local_hi_scoria(:), face_local_lo_scoria(:)
 
@@ -576,11 +576,9 @@ module my_scoria_ranged_read_c_derivatives
         & cell_val_mnmx_hilo_mi_1_scoria(:), cell_val_mnmx_hilo_mi_2_scoria(:), &
         & cell_val_mnmx_hilo_mo_3_scoria(:), cell_val_mnmx_hilo_mo_4_scoria(:)
 
-      real(REAL64), allocatable, save :: cell_half_lo_hi_packed(:), rho_hi_packed(:), &
-        & cell_value_hilo_lo_packed(:), cell_half_hi_lo_packed(:), rho_lo_packed(:), &
-        & cell_value_hilo_hi_packed(:), cell_val_mnmx_hilo_hi_1_packed(:), cell_val_mnmx_hilo_hi_2_packed(:), &
-        & cell_val_mnmx_hilo_lo_3_packed(:), cell_val_mnmx_hilo_lo_4_packed(:), cell_val_mnmx_hilo_mi_1_packed(:), &
-        & cell_val_mnmx_hilo_mi_2_packed(:), cell_val_mnmx_hilo_mo_3_packed(:), cell_val_mnmx_hilo_mo_4_packed(:)
+      real(REAL64), allocatable, save :: face_local_hi_buffer(:), face_local_lo_buffer(:)
+
+      real(REAL64), allocatable, save :: face_local_hi_packed(:), face_local_lo_packed(:)
 
       associate (cells => mesh%cells, &
         faces => mesh%faces)
@@ -656,24 +654,53 @@ module my_scoria_ranged_read_c_derivatives
         allocate(cell_val_mnmx_hilo_mo_4_scoria(size(cell_val_mnmx_hilo(:, 4))))
 
         ! Scoria: Allocate Packed Arrays
-        allocate(cell_half_lo_hi_packed(scoria_n))
-        allocate(cell_value_hilo_lo_packed(scoria_n))
-        allocate(cell_half_hi_lo_packed(scoria_n))
-        allocate(cell_value_hilo_hi_packed(scoria_n))
-
         if (present(do_special)) then
-          allocate(rho_hi_packed(scoria_n))
-          allocate(rho_lo_packed(scoria_n))
-        endif
+          R = 7
+          allocate(face_local_hi_packed(R * scoria_n))
+          allocate(face_local_lo_packed(R * scoria_n))
 
-        allocate(cell_val_mnmx_hilo_hi_1_packed(scoria_n))
-        allocate(cell_val_mnmx_hilo_hi_2_packed(scoria_n))
-        allocate(cell_val_mnmx_hilo_lo_3_packed(scoria_n))
-        allocate(cell_val_mnmx_hilo_lo_4_packed(scoria_n))
-        allocate(cell_val_mnmx_hilo_mi_1_packed(scoria_n))
-        allocate(cell_val_mnmx_hilo_mi_2_packed(scoria_n))
-        allocate(cell_val_mnmx_hilo_mo_3_packed(scoria_n))
-        allocate(cell_val_mnmx_hilo_mo_4_packed(scoria_n))
+          do i = 1, scoria_n
+            face_local_hi_buffer((i - 1) * R + 1) = cell_half_lo_scoria(i)
+            face_local_hi_buffer((i - 1) * R + 2) = cell_value_hilo_1_scoria(i)
+            face_local_hi_buffer((i - 1) * R + 3) = rho_scoria(i)
+            face_local_hi_buffer((i - 1) * R + 4) = cell_val_mnmx_hilo_hi_1_scoria(i)
+            face_local_hi_buffer((i - 1) * R + 5) = cell_val_mnmx_hilo_hi_2_scoria(i)
+            face_local_hi_buffer((i - 1) * R + 6) = cell_val_mnmx_hilo_mi_1_scoria(i)
+            face_local_hi_buffer((i - 1) * R + 7) = cell_val_mnmx_hilo_mi_2_scoria(i)
+          enddo
+
+          do i = 1, scoria_n
+            face_local_lo_buffer((i - 1) * R + 1) = cell_value_hilo_2_scoria(i)
+            face_local_lo_buffer((i - 1) * R + 2) = cell_half_hi_scoria(i)
+            face_local_lo_buffer((i - 1) * R + 3) = rho_scoria(i)
+            face_local_lo_buffer((i - 1) * R + 4) = cell_val_mnmx_hilo_lo_3_scoria(i)
+            face_local_lo_buffer((i - 1) * R + 5) = cell_val_mnmx_hilo_lo_4_scoria(i)
+            face_local_lo_buffer((i - 1) * R + 6) = cell_val_mnmx_hilo_mo_3_scoria(i)
+            face_local_lo_buffer((i - 1) * R + 7) = cell_val_mnmx_hilo_mo_4_scoria(i)
+          enddo
+        else
+          R = 6
+          allocate(face_local_hi_packed(R * scoria_n))
+          allocate(face_local_lo_packed(R * scoria_n))
+
+          do i = 1, scoria_n
+            face_local_hi_buffer((i - 1) * R + 1) = cell_half_lo_scoria(i)
+            face_local_hi_buffer((i - 1) * R + 2) = cell_value_hilo_1_scoria(i)
+            face_local_hi_buffer((i - 1) * R + 3) = cell_val_mnmx_hilo_hi_1_scoria(i)
+            face_local_hi_buffer((i - 1) * R + 4) = cell_val_mnmx_hilo_hi_2_scoria(i)
+            face_local_hi_buffer((i - 1) * R + 5) = cell_val_mnmx_hilo_mi_1_scoria(i)
+            face_local_hi_buffer((i - 1) * R + 6) = cell_val_mnmx_hilo_mi_2_scoria(i)
+          enddo
+
+          do i = 1, scoria_n
+            face_local_lo_buffer((i - 1) * R + 1) = cell_value_hilo_2_scoria(i)
+            face_local_lo_buffer((i - 1) * R + 2) = cell_half_hi_scoria(i)
+            face_local_lo_buffer((i - 1) * R + 3) = cell_val_mnmx_hilo_lo_3_scoria(i)
+            face_local_lo_buffer((i - 1) * R + 4) = cell_val_mnmx_hilo_lo_4_scoria(i)
+            face_local_lo_buffer((i - 1) * R + 5) = cell_val_mnmx_hilo_mo_3_scoria(i)
+            face_local_lo_buffer((i - 1) * R + 6) = cell_val_mnmx_hilo_mo_4_scoria(i)
+          enddo
+        endif
         ! End Scoria Setup
 
         ! BEGIN SCORIA TIMING
@@ -682,112 +709,80 @@ module my_scoria_ranged_read_c_derivatives
         TIMERSET(.true., scoria_inside_com3b)
 
         ! Scoria Read (1-level Gather)
-        call scoria_read_1(cell_half_lo_hi_packed, cell_half_lo_scoria, &
-          & int(size(cell_half_lo_scoria), kind=c_size_t), face_local_hi_scoria, scoria_n)
-        call scoria_read_1(cell_value_hilo_lo_packed, cell_value_hilo_2_scoria, & 
-          & int(size(cell_value_hilo_2_scoria), kind=c_size_t), face_local_lo_scoria, scoria_n)
-
-        call scoria_read_1(cell_half_hi_lo_packed, cell_half_hi_scoria, & 
-          & int(size(cell_half_hi_scoria), kind=c_size_t), face_local_lo_scoria, scoria_n)
-        call scoria_read_1(cell_value_hilo_hi_packed, cell_value_hilo_1_scoria, &
-          & int(size(cell_value_hilo_1_scoria), kind=c_size_t), face_local_hi_scoria, scoria_n)
-
-        if (present(do_special)) then
-          call scoria_read_1(rho_hi_packed, rho_scoria, int(size(rho_scoria), kind=c_size_t), &
-            & face_local_hi_scoria, scoria_n)
-          call scoria_read_1(rho_lo_packed, rho_scoria, int(size(rho_scoria), kind=c_size_t), & 
-          & face_local_lo_scoria, scoria_n)
-        endif
-
-        call scoria_read_1(cell_val_mnmx_hilo_hi_1_packed, cell_val_mnmx_hilo_hi_1_scoria, &
-          & int(size(cell_val_mnmx_hilo_hi_1_scoria), kind=c_size_t), face_local_hi_scoria, scoria_n)
-        call scoria_read_1(cell_val_mnmx_hilo_hi_2_packed, cell_val_mnmx_hilo_hi_2_scoria, &
-          & int(size(cell_val_mnmx_hilo_hi_2_scoria), kind=c_size_t), face_local_hi_scoria, scoria_n)
-
-        call scoria_read_1(cell_val_mnmx_hilo_lo_3_packed, cell_val_mnmx_hilo_lo_3_scoria, &
-          & int(size(cell_val_mnmx_hilo_lo_3_scoria), kind=c_size_t), face_local_lo_scoria, scoria_n)
-        call scoria_read_1(cell_val_mnmx_hilo_lo_4_packed, cell_val_mnmx_hilo_lo_4_scoria, &
-          & int(size(cell_val_mnmx_hilo_lo_4_scoria), kind=c_size_t), face_local_lo_scoria, scoria_n)
-
-        call scoria_read_1(cell_val_mnmx_hilo_mi_1_packed, cell_val_mnmx_hilo_mi_1_scoria, &
-          & int(size(cell_val_mnmx_hilo_mi_1_scoria), kind=c_size_t), face_local_hi_scoria, scoria_n)
-        call scoria_read_1(cell_val_mnmx_hilo_mi_2_packed, cell_val_mnmx_hilo_mi_2_scoria, &
-          & int(size(cell_val_mnmx_hilo_mi_2_scoria), kind=c_size_t), face_local_hi_scoria, scoria_n)
-
-        call scoria_read_1(cell_val_mnmx_hilo_mo_3_packed, cell_val_mnmx_hilo_mo_3_scoria, &
-          & int(size(cell_val_mnmx_hilo_mo_3_scoria), kind=c_size_t), face_local_lo_scoria, scoria_n)
-        call scoria_read_1(cell_val_mnmx_hilo_mo_4_packed, cell_val_mnmx_hilo_mo_4_scoria, &
-          & int(size(cell_val_mnmx_hilo_mo_4_scoria), kind=c_size_t), face_local_lo_scoria, scoria_n)
+        call scoria_read_ranged_1_c(face_local_lo_packed, face_local_lo_buffer, int(size(face_local_lo_buffer), kind=c_size_t), face_local_lo_scoria, scoria_n, R)
+        call scoria_read_ranged_1_c(face_local_hi_packed, face_local_hi_buffer, int(size(face_local_hi_buffer), kind=c_size_t), face_local_hi_scoria, scoria_n, R)
 
         if (faces%face_id(loop,dir) .gt. 2) then 
           if (present(do_special)) then
             ! Do the HI_SIDE part
             do i = 1, scoria_n
               face_value = ZERO
+              offset = (i - 1) * R
 
-              if (rho_lo_packed(i) .gt. ZERO .or. rho_hi_packed(i) .gt. ZERO) then 
-                if (do_pressure .and. cell_value_hilo_lo_packed(i) &
-                  & * cell_value_hilo_hi_packed(i) .le. ZERO) then
+              if (face_local_lo_packed(offset + 3) .gt. ZERO .or. face_local_hi_packed(offset + 3) .gt. ZERO) then 
+                if (do_pressure .and. face_local_lo_packed(offset + 1) &
+                  & * face_local_hi_packed(offset + 2) .le. ZERO) then
                   ! ..... this coding addresses the hot spot problem
-                  face_value = (cell_half_lo_hi_packed(i) * &
-                    & rho_hi_packed(i) * &
-                    & cell_value_hilo_lo_packed(i) + &
-                    & cell_half_hi_lo_packed(i) * &
-                    & rho_lo_packed(i) * &
-                    & cell_value_hilo_hi_packed(i)) / &
-                    & (cell_half_lo_hi_packed(i) * &
-                    & rho_hi_packed(i) + &
-                    & cell_half_hi_lo_packed(i) * &
-                    & rho_lo_packed(i))
+                  face_value = (face_local_hi_packed(offset + 1) * &
+                    & face_local_hi_packed(offset + 3) * &
+                    & face_local_lo_packed(offset + 1) + &
+                    & face_local_lo_packed(offset + 2) * &
+                    & face_local_lo_packed(offset + 3) * &
+                    & face_local_hi_packed(offset + 2)) / &
+                    & (face_local_hi_packed(offset + 1) * &
+                    & face_local_hi_packed(offset + 3) + &
+                    & face_local_hi_lo_packed(offset + 2) * &
+                    & face_local_lo_packed(offset + 3))
                 else
-                  face_value = (cell_half_lo_hi_packed(i) * &
-                    & cell_value_hilo_lo_packed(i) + &
-                    & cell_half_hi_lo_packed(i) * &
-                    & cell_value_hilo_hi_packed(i)) / &
-                    & (cell_half_lo_hi_packed(i) + &
-                    & cell_half_hi_lo_packed(i))
+                  face_value = (face_local_hi_packed(offset + 1) * &
+                    & face_local_lo_packed(offset + 1) + &
+                    & face_local_lo_packed(offset + 2) * &
+                    & face_local_hi_packed(offset + 2)) / &
+                    & (face_local_hi_packed(offset + 1) + &
+                    & face_local_lo_packed(offset + 2))
                 endif ! do_pressure ...
               endif ! core%rho
 
               !write(10, *) "1 Face Value: "
               !write(10, "(f8.2)") face_value
 
-              cell_val_mnmx_hilo_hi_1_packed(i) = min(cell_val_mnmx_hilo_hi_1_packed(i), face_value)
-              cell_val_mnmx_hilo_hi_2_packed(i) = min(cell_val_mnmx_hilo_hi_2_packed(i), face_value)
+              face_local_hi_packed(offset + 4) = min(face_local_hi_packed(offset + 4), face_value)
+              face_local_hi_packed(offset + 5) = min(face_local_hi_packed(offset + 5), face_value)
             enddo ! n
 
             ! Do the LO_SIDE part
             do i = 1, scoria_n
               face_value = ZERO 
+              offset = (i - 1) * R
 
-              if (rho_lo_packed(i) .gt. ZERO .or. rho_hi_packed(i) .gt. ZERO) then
-                if (do_pressure .and. cell_value_hilo_lo_packed(i) * cell_value_hilo_hi_packed(i) .le. ZERO) then
+              if (face_local_lo_packed(offset + 3) .gt. ZERO .or. face_local_hi_packed(offset + 3) .gt. ZERO) then
+                if (do_pressure .and. face_local_lo_packed(offset + 1) * face_local_hi_packed(offset + 2) .le. ZERO) then
                   ! ..... this coding addresses the hot spot problem
-                  face_value = (cell_half_lo_hi_packed(i) * &
-                    & rho_hi_packed(i) * &
-                    & cell_value_hilo_lo_packed(i) + &
-                    & cell_half_hi_lo_packed(i) * &
-                    & rho_lo_packed(i) * &
-                    & cell_value_hilo_hi_packed(i)) / &
-                    & (cell_half_lo_hi_packed(i) * &
-                    & rho_hi_packed(i) + &
-                    & cell_half_hi_lo_packed(i) * &
-                    & rho_lo_packed(i))
+                  face_value = (face_local_hi_packed(offset + 1) * &
+                    & face_local_hi_packed(offset + 3) * &
+                    & face_local_lo_packed(offset + 1) + &
+                    & face_local_lo_packed(offset + 2) * &
+                    & face_local_lo_packed(offset + 3) * &
+                    & face_local_hi_packed(offset + 2)) / &
+                    & (face_local_hi_packed(offset + 1) * &
+                    & face_local_hi_packed(offset + 3) + &
+                    & face_local_lo_packed(offset + 2) * &
+                    & face_local_lo_packed(offset + 3))
                 else
-                  face_value = (cell_half_lo_hi_packed(i) * &
-                    & cell_value_hilo_lo_packed(i) + &
-                    & cell_half_hi_lo_packed(i) * &
-                    & cell_value_hilo_hi_packed(i)) /&
-                    & (cell_half_lo_hi_packed(i) + &
-                    & cell_half_hi_lo_packed(i))
+                  face_value = (face_local_hi_packed(offset + 1) * &
+                    & face_local_lo_packed(offset + 1) + &
+                    & face_local_lo_packed(offset + 2) * &
+                    & face_local_hi_packed(offset + 2)) /&
+                    & (face_local_hi_packed(offset + 1) + &
+                    & face_local_lo_packed(offset + 2))
                 endif ! do_pressure ...
               endif ! core%rho
 
               !write(10, *) "2 Face Value: "
               !write(10, "(f8.2)") face_value
 
-              cell_val_mnmx_hilo_lo_3_packed(i) = min(cell_val_mnmx_hilo_lo_3_packed(i), face_value)
-              cell_val_mnmx_hilo_lo_4_packed(i) = min(cell_val_mnmx_hilo_lo_4_packed(i), face_value)
+              face_local_lo_packed(offset + 4) = min(face_local_lo_packed(offset + 4), face_value)
+              face_local_lo_packed(offset + 5) = min(face_local_lo_packed(offset + 5), face_value)
             enddo ! n
 
           else ! not present(do_special)
@@ -918,24 +913,8 @@ module my_scoria_ranged_read_c_derivatives
         deallocate(cell_val_mnmx_hilo_mo_3_scoria)
         deallocate(cell_val_mnmx_hilo_mo_4_scoria)
 
-        deallocate(cell_half_lo_hi_packed) 
-        deallocate(cell_value_hilo_lo_packed)
-        deallocate(cell_half_hi_lo_packed)
-        deallocate(cell_value_hilo_hi_packed)
-
-        if (present(do_special)) then
-          deallocate(rho_hi_packed)
-          deallocate(rho_lo_packed)
-        endif
-
-        deallocate(cell_val_mnmx_hilo_hi_1_packed)
-        deallocate(cell_val_mnmx_hilo_hi_2_packed)
-        deallocate(cell_val_mnmx_hilo_lo_3_packed)
-        deallocate(cell_val_mnmx_hilo_lo_4_packed)
-        deallocate(cell_val_mnmx_hilo_mi_1_packed)
-        deallocate(cell_val_mnmx_hilo_mi_2_packed)
-        deallocate(cell_val_mnmx_hilo_mo_3_packed)
-        deallocate(cell_val_mnmx_hilo_mo_4_packed)
+        deallocate(face_local_hi_packed)
+        deallocate(face_local_lo_packed)
       enddo ! loop
 
       TIMERSET(.false., inside_com3b)
