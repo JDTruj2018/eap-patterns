@@ -535,7 +535,7 @@ module my_scoria_ranged_read_c_derivatives
       & cell_value_hilo, do_special, do_pressure, core, faceval)
       use iso_c_binding
       use iso_fortran_env, only: REAL64, INT64, INT32, INT8
-      use scoria, only: scoria_read_1, scoria_write_1, scoria_read_ranged_1_c
+      use scoria, only: scoria_read_1, scoria_write_1, scoria_read_ranged_1_c, scoria_write_ranged_1_c
 
       ! non-optional scalars and derived types
       class(sim_info_t), intent(in) :: sim 
@@ -731,7 +731,7 @@ module my_scoria_ranged_read_c_derivatives
                     & face_local_hi_packed(offset + 2)) / &
                     & (face_local_hi_packed(offset + 1) * &
                     & face_local_hi_packed(offset + 3) + &
-                    & face_local_hi_lo_packed(offset + 2) * &
+                    & face_local_lo_packed(offset + 2) * &
                     & face_local_lo_packed(offset + 3))
                 else
                   face_value = (face_local_hi_packed(offset + 1) * &
@@ -799,8 +799,8 @@ module my_scoria_ranged_read_c_derivatives
               !write(10, *) "3 Face Value: "
               !write(10, "(f8.2)") face_value
 
-              face_value_hi_packed(offset + 4) = min(face_value_hi_packed(offset + 4), face_value)
-              face_value_hi_packed(offset + 5) = min(face_value_hi_packed(offset + 5), face_value)
+              face_local_hi_packed(offset + 4) = min(face_local_hi_packed(offset + 4), face_value)
+              face_local_hi_packed(offset + 5) = min(face_local_hi_packed(offset + 5), face_value)
             enddo ! n
             
             ! Do the LO_SIDE
@@ -816,8 +816,8 @@ module my_scoria_ranged_read_c_derivatives
               !write(10, *) "4 Face Value: "
               !write(10, "(f8.2)") face_value
 
-              face_value_lo_packed(offset + 4) = min(face_value_lo_packed(offset + 4), face_value)
-              face_value_lo_packed(offset + 5) = min(face_value_lo_packed(offset + 5), face_value)
+              face_local_lo_packed(offset + 4) = min(face_local_lo_packed(offset + 4), face_value)
+              face_local_lo_packed(offset + 5) = min(face_local_lo_packed(offset + 5), face_value)
             enddo !n
           endif ! present(do_special)
         
@@ -830,19 +830,19 @@ module my_scoria_ranged_read_c_derivatives
               !write(10, *) "5 Face Value: "
               !write(10, "(f8.2)") face_value
 
-              face_value_lo_packed(offset + 6) = min(face_value_lo_packed(offset + 6), face_value)
-              face_value_lo_packed(offset + 7) = min(face_value_lo_packed(offset + 7), face_value)
+              face_local_lo_packed(offset + 6) = min(face_local_lo_packed(offset + 6), face_value)
+              face_local_lo_packed(offset + 7) = min(face_local_lo_packed(offset + 7), face_value)
             enddo ! n
           else
             do i = 1, scoria_n
               offset = (i - 1) * R
-              face_value = cell_value_hilo_lo_packed(i)
+              face_value = face_local_lo_packed(offset + 1)
 
               !write(10, *) "6 Face Value: "
               !write(10, "(f8.2)") face_value
 
-              face_value_lo_packed(offset + 4) = min(face_value_lo_packed(offset + 4), face_value)
-              face_value_lo_packed(offset + 5) = min(face_value_lo_packed(offset + 5), face_value)
+              face_local_lo_packed(offset + 4) = min(face_local_lo_packed(offset + 4), face_value)
+              face_local_lo_packed(offset + 5) = min(face_local_lo_packed(offset + 5), face_value)
             enddo ! n
           endif
 
@@ -855,19 +855,19 @@ module my_scoria_ranged_read_c_derivatives
               !write(10, *) "7 Face Value: "
               !write(10, "(f8.2)") face_value
 
-              face_value_hi_packed(offset + 6) = min(face_value_hi_packed(offset + 6), face_value)
-              face_value_hi_packed(offset + 7) = min(face_value_hi_packed(offset + 7), face_value)
+              face_local_hi_packed(offset + 6) = min(face_local_hi_packed(offset + 6), face_value)
+              face_local_hi_packed(offset + 7) = min(face_local_hi_packed(offset + 7), face_value)
             enddo ! n
           else
             do i = 1, scoria_n
               offset = (i - 1) * R
-              face_value = cell_value_hilo_hi_packed(i)
+              face_value = face_local_hi_packed(offset + 2)
 
               !write(10, *) "8 Face Value: "
               !write(10, "(f8.2)") face_value
 
-              face_value_hi_packed(offset + 4) = min(face_value_hi_packed(offset + 4), face_value)
-              face_value_hi_packed(offset + 5) = min(face_value_hi_packed(offset + 5), face_value)
+              face_local_hi_packed(offset + 4) = min(face_local_hi_packed(offset + 4), face_value)
+              face_local_hi_packed(offset + 5) = min(face_local_hi_packed(offset + 5), face_value)
             enddo ! n
           endif
         endif ! face_id
