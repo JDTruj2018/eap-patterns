@@ -179,5 +179,18 @@ module scoria
             integer(c_size_t), intent(in) :: ind1(0:n1)
         end subroutine scoria_read_ranged_1_c
 
+        subroutine scoria_write_ranged_1_c(buffer, input, n, ind1, n1, R) &
+                   BIND(C, name="scoria_write_ranged_1_c")
+            use iso_c_binding
+            implicit none
+
+            integer(c_size_t), value, intent(in) :: n
+            integer(c_size_t), value, intent(in) :: n1
+            integer(c_size_t), value, intent(in) :: R
+            real(c_double), intent(inout) :: buffer(0:n)
+            real(c_double), intent(in) :: input(0:n1)
+            integer(c_size_t), intent(in) :: ind1(0:n1)
+        end subroutine scoria_write_ranged_1_c
+
     end interface
 end module scoria

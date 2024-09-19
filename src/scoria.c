@@ -174,8 +174,17 @@ void scoria_read_ranged_1_b(double *res, const double *buffer, const size_t N, c
 void scoria_read_ranged_1_c(double *res, const double *buffer, const size_t N, const size_t *ind1, const size_t N1, const size_t R) {
   size_t count = 0;
   for (size_t i = 0; i < N1; ++i) {
-    for(size_t j = ind1[i] - 1; j < ind1[i+1] + R - 1; ++j, ++count) {
+    for(size_t j = ind1[i] - 1; j < ind1[i] + R - 1; ++j, ++count) {
       res[count] = buffer[j];
+    }
+  }
+}
+
+void scoria_write_ranged_1_c(double *buffer, const double *input, const size_t N, const size_t *ind1, const size_t N1, const size_t R) {
+  size_t count = 0;
+  for (size_t i = 0; i < N1; ++i) {
+    for (size_t j = ind1[i] - 1; j < ind1[i] + R - 1; ++j, ++count) {
+      buffer[ind1[i] - 1] = input[count]
     }
   }
 }
