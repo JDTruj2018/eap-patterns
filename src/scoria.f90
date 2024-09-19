@@ -36,7 +36,7 @@ module scoria
         end subroutine print_face_num
 
         subroutine scoria_read_1(res, buffer, n, ind1, n1) &
-                   BIND(C, name="scoria_read_1")
+                    & BIND(C, name="scoria_read_1")
             use iso_c_binding
             implicit none
 
@@ -48,7 +48,7 @@ module scoria
         end subroutine scoria_read_1
 
         subroutine scoria_write_1(buffer, input, n, ind1, n1) &
-                   BIND(C, name="scoria_write_1")
+                    & BIND(C, name="scoria_write_1")
             use iso_c_binding
             implicit none
 
@@ -59,8 +59,9 @@ module scoria
             integer(c_size_t), intent(in) :: ind1(0:n1)
         end subroutine scoria_write_1
 
-        subroutine scoria_read_1_many_2(resA, resB, bufferA, bufferB, n, ind1, n1) &
-                   BIND(C, name="scoria_read_1_many_2")
+        subroutine scoria_read_1_many_2(resA, resB, & 
+                    & bufferA, bufferB, n, ind1, n1) &
+                    & BIND(C, name="scoria_read_1_many_2")
             use iso_c_binding
             implicit none
 
@@ -73,8 +74,9 @@ module scoria
             integer(c_size_t), intent(in) :: ind1(0:n1)
         end subroutine scoria_read_1_many_2
 
-        subroutine scoria_read_1_many_3(resA, resB, resC, bufferA, bufferB, bufferC, n, ind1, n1) &
-                   BIND(C, name="scoria_read_1_many_3")
+        subroutine scoria_read_1_many_3(resA, resB, resC, &
+                    & bufferA, bufferB, bufferC, n, ind1, n1) &
+                    & BIND(C, name="scoria_read_1_many_3")
             use iso_c_binding
             implicit none
 
@@ -89,8 +91,9 @@ module scoria
             integer(c_size_t), intent(in) :: ind1(0:n1)
         end subroutine scoria_read_1_many_3
 
-        subroutine scoria_read_1_many_4(resA, resB, resC, resD, bufferA, bufferB, bufferC, bufferD, n, ind1, n1) &
-                   BIND(C, name="scoria_read_1_many_4")
+        subroutine scoria_read_1_many_4(resA, resB, resC, resD, &
+                    & bufferA, bufferB, bufferC, bufferD, n, ind1, n1) &
+                    & BIND(C, name="scoria_read_1_many_4")
             use iso_c_binding
             implicit none
 
@@ -107,8 +110,9 @@ module scoria
             integer(c_size_t), intent(in) :: ind1(0:n1)
         end subroutine scoria_read_1_many_4
 
-        subroutine scoria_read_1_many_6(resA, resB, resC, resD, resE, resF, bufferA, bufferB, bufferC, bufferD, bufferE, bufferF, n, ind1, n1) &
-                   BIND(C, name="scoria_read_1_many_6")
+        subroutine scoria_read_1_many_6(resA, resB, resC, resD, resE, resF, &
+                    & bufferA, bufferB, bufferC, bufferD, bufferE, bufferF, n, ind1, n1) &
+                    & BIND(C, name="scoria_read_1_many_6")
             use iso_c_binding
             implicit none
 
@@ -129,8 +133,9 @@ module scoria
             integer(c_size_t), intent(in) :: ind1(0:n1)
         end subroutine scoria_read_1_many_6
 
-        subroutine scoria_read_1_many_7(resA, resB, resC, resD, resE, resF, resG, bufferA, bufferB, bufferC, bufferD, bufferE, bufferF, bufferG, n, ind1, n1) &
-                   BIND(C, name="scoria_read_1_many_7")
+        subroutine scoria_read_1_many_7(resA, resB, resC, resD, resE, resF, resG, &
+                    & bufferA, bufferB, bufferC, bufferD, bufferE, bufferF, bufferG, n, ind1, n1) &
+                    & BIND(C, name="scoria_read_1_many_7")
             use iso_c_binding
             implicit none
 
@@ -154,7 +159,7 @@ module scoria
         end subroutine scoria_read_1_many_7
 
         subroutine scoria_read_ranged_1_b(res, buffer, n, ind1, n1, R) &
-                   BIND(C, name="scoria_read_ranged_1_b")
+                    & BIND(C, name="scoria_read_ranged_1_b")
             use iso_c_binding
             implicit none
 
@@ -167,7 +172,7 @@ module scoria
         end subroutine scoria_read_ranged_1_b
 
         subroutine scoria_read_ranged_1_c(res, buffer, n, ind1, n1, R) &
-                   BIND(C, name="scoria_read_ranged_1_c")
+                    & BIND(C, name="scoria_read_ranged_1_c")
             use iso_c_binding
             implicit none
 
@@ -180,7 +185,7 @@ module scoria
         end subroutine scoria_read_ranged_1_c
 
         subroutine scoria_write_ranged_1_c(buffer, input, n, ind1, n1, R) &
-                   BIND(C, name="scoria_write_ranged_1_c")
+                    & BIND(C, name="scoria_write_ranged_1_c")
             use iso_c_binding
             implicit none
 
