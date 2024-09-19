@@ -709,8 +709,10 @@ module my_scoria_ranged_read_c_derivatives
         TIMERSET(.true., scoria_inside_com3b)
 
         ! Scoria Read (1-level Gather)
-        call scoria_read_ranged_1_c(face_local_lo_packed, face_local_lo_buffer, int(size(face_local_lo_buffer), kind=c_size_t), face_local_lo_scoria, scoria_n, R)
-        call scoria_read_ranged_1_c(face_local_hi_packed, face_local_hi_buffer, int(size(face_local_hi_buffer), kind=c_size_t), face_local_hi_scoria, scoria_n, R)
+        call scoria_read_ranged_1_c(face_local_lo_packed, face_local_lo_buffer, &
+          & int(size(face_local_lo_buffer), kind=c_size_t), face_local_lo_scoria, scoria_n, R)
+        call scoria_read_ranged_1_c(face_local_hi_packed, face_local_hi_buffer, &
+          & int(size(face_local_hi_buffer), kind=c_size_t), face_local_hi_scoria, scoria_n, R)
 
         if (faces%face_id(loop,dir) .gt. 2) then 
           if (present(do_special)) then
