@@ -5,11 +5,16 @@ cmake_minimum_required(VERSION 3.16.0)
 enable_language(Fortran)
 project(mygrad LANGUAGES Fortran C)
 
+option(EP_CALIPER "Build targets with Caliper integration;" "OFF")
 option(EP_MPI "Build targets with MPI integration;" "ON")
 option(EP_SANITIZE "Add address sanitizer flag;" "OFF")
 option(EP_GZ "Enable GZ file reading in PIO;" "ON")
 option(EP_VTUNE "Enable VTUNE profiling control;" "OFF") 
 option(EP_IPO "Enable Interprocedural Optimization;" "OFF") 
+
+if ( EP_CALIPER )
+  find_package(caliper REQUIRED)
+endif ()
 
 if ( EP_MPI )
   find_package(MPI REQUIRED)
@@ -82,6 +87,14 @@ if ( EP_GZ )
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_GZ=1")
   include_directories(${ZLIB_INCLUDE_DIRS})
   target_link_libraries(mygrad ${ZLIB_LIBRARIES})
+endif ()
+
+if ( EP_CALIPER )
+  target_link_libraries(mygrad caliper)
+  target_include_directories(mygrad PUBLIC ${caliper_INCLUDE_DIR}/caliper/fortran)
+
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -DENABLE_CALIPER=1")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_CALIPER=1")
 endif ()
 
 if ( EP_MPI )

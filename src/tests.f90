@@ -33,9 +33,18 @@ contains
   subroutine test_driver(fm, n_iter)
     use fakemesh, only: fakemesh_t
     use clone_lib_module, only: clone_myid
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
+
     implicit none
     type(fakemesh_t) :: fm
     integer, intent(in) :: n_iter
+
+#if ENABLE_CALIPER
+       call cali_begin_region('test_driver')
+#endif
 
     myid = clone_myid()
     
@@ -50,14 +59,28 @@ contains
     call deriv_test(fm, n_iter)
     
     if (myid == 0 ) write(*,'(/,"--------END TESTS-----------",/)')
+
+#if ENABLE_CALIPER
+      call cali_end_region('test_driver')
+#endif
+
   end subroutine test_driver
 
   subroutine printit(the_name, the_status, the_dt)
     use clone_lib_module, only: clone_myid
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
+
     implicit none
     character(len=*), intent(in) :: the_name
     logical, intent(in) :: the_status
     real(REAL64) :: the_dt, max_dt
+
+#if ENABLE_CALIPER
+       call cali_begin_region('printit')
+#endif
 
     call clone_reduce(max_dt, the_dt, CLONE_MAX)
     if (clone_myid() == 0) then
@@ -67,11 +90,21 @@ contains
           write(*,*) '  **FAIL: ', max_dt, trim(the_name)
        end if
     end if
+
+#if ENABLE_CALIPER
+      call cali_end_region('printit')
+#endif
+
   end subroutine printit
 
   subroutine topcell_sum(m, n_iter) 
     use iso_fortran_env, only: REAL64
     use mesh_types, only: mesh_t
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
+
     implicit none
 
     type(mesh_t), intent(in) :: m
@@ -81,6 +114,10 @@ contains
 
     integer :: i, iTop, iCell
     real(REAL64) :: my_dt, local_sum, my_sum, partial_result, expected_result
+
+#if ENABLE_CALIPER
+       call cali_begin_region('topcell_sum')
+#endif
 
     ! Initialize arrays
     allocate(values(m%cells%numcell))
@@ -117,12 +154,22 @@ contains
        end if
     end if
     call printit("topcell_sum", (my_sum == expected_result), my_dt)
+
+#if ENABLE_CALIPER
+      call cali_end_region('topcell_sum')
+#endif
+
   end subroutine topcell_sum
   
   subroutine faces_sum(m, n_iter)
     use define_kind, only: HI_SIDE, LO_SIDE
     use iso_fortran_env, only: REAL64, INT64
     use mesh_types, only: mesh_t
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
+
     implicit none
 
     type(mesh_t), intent(in) :: m
@@ -134,6 +181,10 @@ contains
     real(REAL64) :: my_dt, delta, factor
     real(REAL64) :: faces_by_types(5), faces_on_pe_boundary(5)
     real(REAL64) :: global_faces_by_types(5), global_faces_on_pe_boundary(5)
+
+#if ENABLE_CALIPER
+       call cali_begin_region('faces_sum')
+#endif
 
     ! Initialize arrays
     allocate(values(m%cells%numcell))
@@ -204,6 +255,11 @@ contains
          (global_faces_on_pe_boundary(iType), iType=1,5)
     end if
     call printit("faces_sum", .true., my_dt)
+
+#if ENABLE_CALIPER
+      call cali_end_region('faces_sum')
+#endif
+
   end subroutine faces_sum
 
   subroutine faces_check(m, n_iter)
@@ -213,6 +269,11 @@ contains
 #ifdef ENABLE_VTUNE  
     use ittnotify
 #endif
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
+
     implicit none
 
     type(mesh_t), intent(in) :: m
@@ -224,6 +285,9 @@ contains
     real(REAL64) :: my_dt, my_sum, expected_result, my_T_sum, all_sum, all_expected
     integer, allocatable :: mothers(:)
     
+#if ENABLE_CALIPER
+       call cali_begin_region('faces_check')
+#endif
 
     ! Initialize arrays
     allocate(values(m%cells%numcell_clone))
@@ -327,6 +391,11 @@ contains
        call printit("face_check mothers", (all_sum ==  all_expected), my_dt)
     end if
     deallocate(values)
+
+#if ENABLE_CALIPER
+      call cali_end_region('faces_check')
+#endif
+
   end subroutine faces_check
 
   subroutine deriv_test(fm, n_iter)
@@ -340,6 +409,11 @@ contains
 #ifdef ENABLE_VTUNE  
     use ittnotify
 #endif
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
+
     implicit none
     type(fakemesh_t) :: fm
     integer, intent(in) :: n_iter
@@ -351,7 +425,11 @@ contains
     real(REAL64) :: my_dt
     real(REAL64), allocatable, dimension(:,:)   :: value_cloned
     integer :: iVar
-    
+
+#if ENABLE_CALIPER
+       call cali_begin_region('deriv_test')
+#endif
+
     my_dt = now()
 #ifdef ENABLE_VTUNE  
     call itt_resume()
@@ -392,6 +470,10 @@ contains
 #endif
     my_dt = now() - my_dt
     call printit("deriv_test", .true., my_dt)
+
+#if ENABLE_CALIPER
+      call cali_end_region('deriv_test')
+#endif
 
   end subroutine deriv_test
     

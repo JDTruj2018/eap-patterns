@@ -22,9 +22,18 @@ subroutine testme(fm)
   use gradient_types,         only : gradient_prop_t
   use interface_types,        only : interface_option_t
   use fakemesh
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
+
   implicit none
   type(fakemesh_t) :: fm
   type(mesh_state_frac_core_t) :: frac_core
+
+#ifdef ENABLE_CALIPER
+  call cali_begin_region('testme')
+#endif
 
   ! call derivatives_common_splits(fm%m%sim, fm%m, &
   !        frac_core, core, &
@@ -45,6 +54,11 @@ subroutine testme(fm)
   !     logical,     intent(in), allocatable :: noslope_cell(:)
   !     logical,     intent(in) :: do_fincom
   !     logical,     intent(in), optional :: do_special
+
+#ifdef ENABLE_CALIPER
+  call cali_end_region('test')
+#endif
+
 end subroutine testme
 program test
   use iso_fortran_env, only: REAL64, INT64
@@ -57,6 +71,11 @@ program test
 #ifdef ENABLE_VTUNE  
   use ittnotify
 #endif
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
+
   implicit none
   type(fakemesh_t) :: fm
   type(mesh_state_frac_core_t) :: frac_core
@@ -68,10 +87,24 @@ program test
   integer(INT64) :: total_numtop, local_numtop
   real(REAL64) :: t0, dt
 
+#ifdef ENABLE_CALIPER
+  type(ConfigManager) :: mgr
+  character(len=4096) :: cali_config
+#endif
+
 #ifdef ENABLE_VTUNE  
   call itt_pause()
 #endif
   
+#ifdef ENABLE_CALIPER
+  call GET_COMMAND_ARGUMENT(2, cali_config)
+  mgr = ConfigManager_new()
+  call mgr%set_default_parameter('aggregate_across_granks', 'false')
+  call mgr%add(cali_config)
+  call mgr%start
+  call cali_begin_region('test')
+#endif
+
   ! Get the filename
   call GET_COMMAND_ARGUMENT(1, fname)
 
@@ -100,6 +133,14 @@ program test
      call clone_barrier()
      if (myid == 0) write(*,*) 'releasing'
      call fm%release()
+
+#ifdef ENABLE_CALIPER
+  call cali_end_region('test')
+  call mgr%flush
+  call ConfigManager_delete(mgr)
+#endif
+
      call clone_exit()
   endif
+
 end program test

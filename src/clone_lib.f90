@@ -298,7 +298,7 @@ contains
   end subroutine clone_base_init
 #else
   subroutine clone_base_init(myid, nprocs)
-    ! Initializes MPI if needed and returns myid and nprocs
+   ! Initializes MPI if needed and returns myid and nprocs
     implicit none
     integer, intent(out) :: myid, nprocs
     integer :: ierror = 0

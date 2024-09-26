@@ -83,6 +83,10 @@
       use util          ,  only : global_error
       use timer_module, only : timerset
 
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
+
       ! ----- purpose
 
       ! ----- flag cells that are vof_cells. Create a compressed linked list of just
@@ -107,6 +111,10 @@
 
       associate ( cells => mesh%cells, &
            levs => mesh%levels)
+
+#if ENABLE_CALIPER
+       call cali_begin_region('modify_weight_tempo')
+#endif
 
         TIMERSET(.true., modify_weight_tempo)
 
@@ -152,6 +160,10 @@
 
         TIMERSET(.false., modify_weight_tempo)
 
+#if ENABLE_CALIPER
+      call cali_end_region('modify_weight_tempo')
+#endif
+
       end associate
 
     end subroutine modify_weight_tempo
@@ -161,6 +173,10 @@
 
       use mesh_state_accessors, only : fv_get_for_cells_ary_materials
       use mesh_state_cell_accessors, only : cv_get_for_cells_ary
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
 
       class(cells_t),intent(in) :: cells
       type(mesh_state_frac_core_t), intent(in) :: frac_core
@@ -173,6 +189,10 @@
       integer :: vmatpos
       logical :: is_mixed
       real(REAL64)  :: relvol, copy_fvol
+
+#if ENABLE_CALIPER
+       call cali_begin_region('collect_vof_mat_mixed')
+#endif
 
       vol(1:cell_count,1:vmatnum) = &
            & FV_get_for_cells_ary_materials(frac_core%vol,cell_count,cell_list,vmatnum,vmats)
@@ -196,9 +216,18 @@
             mixed_list(mixed_count) = l
          endif
       enddo
+
+#if ENABLE_CALIPER
+      call cali_end_region('collect_vof_mat_mixed')
+#endif
+
     end subroutine collect_vof_mat_mixed
     subroutine inside_com3b(sim, mesh, dir, nm, cell_val_mnmx_hilo, kode, &
          & cell_value_hilo, do_special, do_pressure, core, faceval )
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
 
       ! non-optional scalars and derived types
       class(sim_info_t), intent(in) :: sim
@@ -226,6 +255,10 @@
 
       associate (cells => mesh%cells, &
            faces => mesh%faces)
+
+#if ENABLE_CALIPER
+       call cali_begin_region('inside_com3b')
+#endif
 
         TIMERSET(.true., inside_com3b)
 
@@ -365,10 +398,18 @@
 
       end associate
 
+#if ENABLE_CALIPER
+      call cali_end_region('inside_com3b')
+#endif
+
     end subroutine inside_com3b
     ! ------------------------------------------------------------------------------
     subroutine inside_com3e(sim, mesh, itr, nm, limit_slope, cell_deriv_hilo, &
          & deriv_mm )
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
 
       ! non-optional scalars and derived types
       class(sim_info_t), intent(in) :: sim
@@ -386,6 +427,10 @@
       associate (cells => mesh%cells, &
            & faces => mesh%faces)
 
+#if ENABLE_CALIPER
+       call cali_begin_region('inside_com3e')
+#endif
+
         TIMERSET(.true., inside_com3e)
 
         ! .....       
@@ -400,12 +445,20 @@
 
         TIMERSET(.false., inside_com3e)
 
+#if ENABLE_CALIPER
+      call cali_end_region('inside_com3e')
+#endif
+
       end associate
 
     end subroutine inside_com3e
     ! ------------------------------------------------------------------------------
     subroutine inside_com3f(sim, mesh, dir, nm, numitr, method, &
          & lv_weight, deriv, cell_deriv_hilo, cell_deriv_hilo_all_dir )
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
 
       ! non-optional scalars and derived types
       class(sim_info_t), intent(in) :: sim
@@ -423,6 +476,10 @@
 
       associate (cells => mesh%cells, &
            faces => mesh%faces)
+
+#if ENABLE_CALIPER
+       call cali_begin_region('inside_com3f')
+#endif
 
         TIMERSET(.true., inside_com3f)
 
@@ -480,6 +537,10 @@
 
         TIMERSET(.false., inside_com3f)
 
+#if ENABLE_CALIPER
+      call cali_end_region('inside_com3f')
+#endif
+
       end associate
 
     end subroutine inside_com3f
@@ -489,6 +550,10 @@
 
       use gradient_types,        only : gradient_prop_t
       use interface_types,       only : interface_option_t
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
 
       ! non-optional scalars and derived types
       type(mesh_t), intent(in) :: mesh
@@ -513,6 +578,10 @@
       associate (cells => mesh%cells, &
            faces => mesh%faces)
 
+#if ENABLE_CALIPER
+       call cali_begin_region('inside_com3g')
+#endif
+
         TIMERSET(.true., inside_com3g)
 
         ! ..... limit the slope
@@ -533,6 +602,10 @@
 
         TIMERSET(.false., inside_com3g)
 
+#if ENABLE_CALIPER
+      call cali_end_region('inside_com3g')
+#endif
+
       end associate
 
     end subroutine inside_com3g
@@ -541,6 +614,10 @@
          & kode, deriv, frac_core, intopt )
 
       use interface_types,       only : interface_option_t
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
 
       ! non-optional scalars and derived types
       class(sim_info_t), intent(in) :: sim
@@ -561,6 +638,10 @@
 
       associate (cells => mesh%cells, &
            faces => mesh%faces)
+
+#if ENABLE_CALIPER
+       call cali_begin_region('inside_com3h')
+#endif
 
         TIMERSET(.true., inside_com3h)
 
@@ -595,6 +676,10 @@
 
         TIMERSET(.false., inside_com3h)
 
+#if ENABLE_CALIPER
+      call cali_end_region('inside_com3h')
+#endif
+
       end associate
 
     end subroutine inside_com3h
@@ -620,6 +705,10 @@
       use util,                only : global_error
       use timer_module, only : timerset
 
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
+
       ! ----- calling arguments
       class(sim_info_t), intent(in) :: sim
       type(mesh_t), intent(in) :: mesh
@@ -641,6 +730,10 @@
 
       associate (cells => mesh%cells, &
            faces => mesh%faces)
+
+#if ENABLE_CALIPER
+       call cali_begin_region('inside_com1_split')
+#endif
 
         TIMERSET(.true., inside_com1)
 
@@ -799,6 +892,10 @@
 
         TIMERSET(.false.,inside_com1)
 
+#if ENABLE_CALIPER
+      call cali_end_region('inside_com1_split')
+#endif
+
       end associate
 
     end subroutine inside_com1_split
@@ -807,6 +904,10 @@
          & cell_value_hilo, invalue, value_cloned)
 
       use mesh_types, only : mesh_t
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
 
       ! -----  caling arguments
       type(mesh_t), intent(in)  :: mesh
@@ -823,6 +924,10 @@
       integer      :: nt, l, nm
 
       associate (cells => mesh%cells)
+
+#if ENABLE_CALIPER
+       call cali_begin_region('inside_com2_split')
+#endif
 
         TIMERSET(.true., inside_com2)
 
@@ -858,6 +963,9 @@
 
         TIMERSET(.false., inside_com2)
 
+#if ENABLE_CALIPER
+      call cali_end_region('inside_com2_split')
+#endif
       end associate
 
     end subroutine inside_com2_split
@@ -872,6 +980,10 @@
       use mesh_state_types,      only : mesh_state_frac_core_t, mesh_state_core_t
       use gradient_types,        only : gradient_prop_t
       use interface_types,       only : interface_option_t
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
 
       ! non-optional scalars and derived types
       class(sim_info_t), intent(in) :: sim
@@ -912,6 +1024,10 @@
 
       associate (cells => mesh%cells, &
            faces => mesh%faces)
+
+#if ENABLE_CALIPER
+       call cali_begin_region('inside_com3_split')
+#endif
 
         TIMERSET(.true., inside_com3)
 
@@ -1320,6 +1436,10 @@
 
         TIMERSET(.false., inside_com3)
 
+#if ENABLE_CALIPER
+      call cali_end_region('inside_com3_split')
+#endif
+
       end associate
 
     end subroutine inside_com3_split
@@ -1329,6 +1449,10 @@
 
       use sim_types, only : sim_info_t
       use mesh_types, only : mesh_t
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
 
       ! non-optional scalars and derived types
       class(sim_info_t), intent(in) :: sim
@@ -1348,6 +1472,10 @@
 
       associate (cells => mesh%cells, &
            & faces => mesh%faces)
+
+#if ENABLE_CALIPER
+       call cali_begin_region('inside_com3A_split')
+#endif
 
         TIMERSET(.true., inside_com3a)
 
@@ -1391,6 +1519,10 @@
 
         TIMERSET(.false., inside_com3a)
 
+#if ENABLE_CALIPER
+      call cali_end_region('inside_com3A_split')
+#endif
+
       end associate
 
     end subroutine inside_com3A_split
@@ -1400,6 +1532,10 @@
 
       use sim_types, only : sim_info_t
       use mesh_types, only : mesh_t
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
 
       ! non-optional scalars and derived types
       class(sim_info_t), intent(in) :: sim
@@ -1419,6 +1555,10 @@
 
       associate (cells => mesh%cells, &
            faces => mesh%faces)
+
+#if ENABLE_CALIPER
+       call cali_begin_region('inside_com3C_split')
+#endif
 
         TIMERSET(.true., inside_com3c)
 
@@ -1459,6 +1599,10 @@
 
         TIMERSET(.false., inside_com3c)
 
+#if ENABLE_CALIPER
+      call cali_end_region('inside_com3C_split')
+#endif
+
       end associate
 
     end subroutine inside_com3C_split
@@ -1468,6 +1612,10 @@
 
       use sim_types, only : sim_info_t
       use mesh_types, only : mesh_t
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
 
       ! non-optional scalars and derived types
       class(sim_info_t), intent(in) :: sim
@@ -1487,6 +1635,10 @@
 
       associate (cells => mesh%cells, &
            faces => mesh%faces)
+
+#if ENABLE_CALIPER
+       call cali_begin_region('inside_com3D_split')
+#endif
 
         TIMERSET(.true., inside_com3d)
 
@@ -1567,6 +1719,10 @@
 
         TIMERSET(.false., inside_com3d)
 
+#if ENABLE_CALIPER
+      call cali_end_region('inside_com3D_split')
+#endif
+
       end associate
 
     end subroutine inside_com3D_split
@@ -1576,6 +1732,10 @@
 
       use sim_types, only : sim_info_t
       use mesh_types, only : mesh_t
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
 
       ! -----  caling arguments
       class(sim_info_t), intent(in) :: sim
@@ -1600,6 +1760,10 @@
       ! the direction of the original gradient (ranging from 1 to sqrt(3))
       associate ( cells => mesh%cells, &
            levs => mesh%levels)
+
+#if ENABLE_CALIPER
+       call cali_begin_region('inside_com4_split')
+#endif
 
         TIMERSET(.true., inside_com4)
 
@@ -1663,6 +1827,10 @@
 
         TIMERSET(.false., inside_com4)
 
+#if ENABLE_CALIPER
+      call cali_end_region('inside_com4_split')
+#endif
+
       end associate
 
     end subroutine inside_com4_split
@@ -1678,6 +1846,11 @@
       use mesh_state_types, only : mesh_state_frac_core_t, mesh_state_core_t
       use gradient_types,         only : gradient_prop_t
       use interface_types,        only : interface_option_t
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
+
       class(sim_info_t), intent(in) :: sim
       type(mesh_t), intent(in) :: mesh
       type(mesh_state_frac_core_t), intent(in) :: frac_core
@@ -1700,7 +1873,11 @@
 
       real(REAL64), intent(in),    dimension(:,:)   :: invalue
       real(REAL64), intent(in), optional, dimension(:,:)   :: value_cloned
-      
+
+#if ENABLE_CALIPER
+       call cali_begin_region('derivatives_common_split')
+#endif
+
       call derivatives_common_internal_split(sim, mesh, cell_dim, numitr, nvec, kode, &
            noslope_cell, deriv, do_fincom, &
            invalue, &
@@ -1708,6 +1885,11 @@
            value_cloned=value_cloned, do_special=do_special, &
            frac_core=frac_core, core=core, &
            gradp=gradp, intopt=intopt)
+
+#if ENABLE_CALIPER
+      call cali_end_region('derivatives_common_split')
+#endif
+
     end subroutine derivatives_common_split
 
     subroutine derivatives_common_simple_split(sim, mesh, &
@@ -1716,6 +1898,11 @@
          deriv_weight, invalue, value_cloned, do_special)
       use sim_types, only : sim_info_t
       use mesh_types, only : mesh_t
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
+
       class(sim_info_t), intent(in) :: sim
       type(mesh_t), intent(in) :: mesh
       integer,     intent(in) :: cell_dim
@@ -1735,11 +1922,20 @@
       real(REAL64), intent(in),    dimension(:,:)   :: invalue
       real(REAL64), intent(in), optional, dimension(:,:)   :: value_cloned
 
+#if ENABLE_CALIPER
+       call cali_begin_region('derivatives_common_simple_split')
+#endif
+
       call derivatives_common_internal_split(sim, mesh, cell_dim, numitr, nvec, kode, &
            noslope_cell, deriv, do_fincom, &
            invalue, &
            faceval=faceval, deriv_weight=deriv_weight, &
            value_cloned=value_cloned, do_special=do_special)
+
+#if ENABLE_CALIPER
+      call cali_end_region('derivatives_common_simple_split')
+#endif
+
     end subroutine derivatives_common_simple_split
 
     subroutine derivatives_common_internal_split(sim, mesh, &
@@ -1764,6 +1960,11 @@
       use iso_c_binding
       use gradients_interfaces
 #endif
+
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
+
       ! ------------------------------------------------------------------------------
       ! ----- Purpose
       !       This routine calculates the derivative for variable value for a
@@ -1850,6 +2051,10 @@
       associate (cells => mesh%cells, &
            levs => mesh%levels, &
            faces => mesh%faces)
+
+#if ENABLE_CALIPER
+       call cali_begin_region('derivatives_common_internal_split')
+#endif
 
         TIMERSET_UNCOND(.true.,main)
 
@@ -2074,6 +2279,10 @@
 
         TIMERSET_UNCOND(.false.,main)
 
+#if ENABLE_CALIPER
+      call cali_end_region('derivatives_common_internal_split')
+#endif
+
       end associate
 
     contains
@@ -2083,6 +2292,10 @@
 
         use util       , only : global_error
 
+#ifdef ENABLE_CALIPER
+      use caliper_mod
+#endif
+
         integer,      intent(in)     :: cell_dim
         integer,      intent(in)     :: numitr
         logical,      intent(out)    :: do_pressure
@@ -2091,6 +2304,10 @@
         logical,      intent(in), optional :: do_special
 
         logical     :: dimerror = .false.
+
+#if ENABLE_CALIPER
+       call cali_begin_region('deriv_details')
+#endif
 
         !       numitr = 0 : no derivatives (1st order accurate)
         !              = 1 : MM
@@ -2162,6 +2379,10 @@
            call global_error( &
                 & 'derivatives_common_split: cell_dim must be equal to numcell_clone')
         endif
+
+#if ENABLE_CALIPER
+      call cali_end_region('deriv_details')
+#endif
 
       end subroutine deriv_details
       ! ------------------------------------------------------------------------------
